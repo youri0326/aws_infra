@@ -2,23 +2,22 @@
 # -------------------------------
 # 1. Apache, PHPのインストール
 # -------------------------------
-sudo apt-get update -y
-sudo apt-get upgrade -y
-sudo apt-get install -y apache2 php libapache2-mod-php php-mysql
+sudo dnf update -y
+sudo dnf install -y httpd php php-cli php-common php-pdo php-mysqlnd
 
-sudo apache2 -v
-sudo php -v
+httpd -v
+php -v
 
 # -------------------------------
 # 2. Apacheの起動と自動起動設定
 # -------------------------------
-sudo systemctl restart apache2
-sudo systemctl enable apache2
+sudo systemctl restart httpd
+sudo systemctl enable httpd
 
 # -------------------------------
 # 3. 動作確認ファイルの作成（index.php）
 # -------------------------------
-# cat << 'EOF' を使うことで vi の代わりに自動でファイル作成・全置換します
+# ※ $host には実際のRDSエンドポイントを指定してください
 sudo cat << 'EOF' | sudo tee /var/www/html/index.php > /dev/null
 <?php
 $host = '実際のrdsのエンドポイントを指定ください。';
@@ -45,5 +44,5 @@ sudo rm -f /var/www/html/index.html
 # -------------------------------
 # 4. 権限設定
 # -------------------------------
-sudo chown -R www-data:www-data /var/www/html
+sudo chown -R apache:apache /var/www/html
 sudo chmod -R 755 /var/www/html
