@@ -1,11 +1,4 @@
 # =====================================================
-# 1. 共通環境変数の設定
-# =====================================================
-REGION="ap-northeast-1"
-KEY_NAME="app-prod-key"
-
-
-# =====================================================
 # 2. ロードバランサー (ALB) およびターゲットグループの削除
 # =====================================================
 # ALB ARNの取得
@@ -63,9 +56,6 @@ NAT_ID=$(aws ec2 describe-nat-gateways --filter "Name=tag:Name,Values=Egress-NAT
 # NATゲートウェイの削除
 aws ec2 delete-nat-gateway --nat-gateway-id $NAT_ID
 
-# NATゲートウェイ削除完了の待機
-aws ec2 wait nat-gateway-deleted --nat-gateway-ids $NAT_ID
-
 # Elastic IPの解放 (Allocation ID取得後に解放)
 EIP_ALLOC=$(aws ec2 describe-addresses --filters "Name=tag:Name,Values=NatGateway-EIP" --query "Addresses[0].AllocationId" --output text)
 aws ec2 release-address --allocation-id $EIP_ALLOC
@@ -98,10 +88,10 @@ PUB_RT_ID=$(aws ec2 describe-route-tables --filters "Name=tag:Name,Values=Public
 PRIV_RT_ID=$(aws ec2 describe-route-tables --filters "Name=tag:Name,Values=Private-RouteTable" --query "RouteTables[0].RouteTableId" --output text)
 
 # ルートテーブルのサブネット関連付け解除 (Association IDを取得して解除)
-PUB_ASSOC_IDS=$(aws ec2 describe-route-tables --route-table-ids $PUB_RT_ID --query "RouteTables[0].Associations[?!Main].RouteTableAssociationId" --output text)
+PUB_ASSOC_IDS=$(aws ec2 describe-route-tables --route-table-ids $PUB_RT_ID --query 'RouteTables[0].Associations[?!Main].RouteTableAssociationId' --output text)
 for ASSOC_ID in $PUB_ASSOC_IDS; do aws ec2 disassociate-route-table --association-id $ASSOC_ID; done
 
-PRIV_ASSOC_IDS=$(aws ec2 describe-route-tables --route-table-ids $PRIV_RT_ID --query "RouteTables[0].Associations[?!Main].RouteTableAssociationId" --output text)
+PRIV_ASSOC_IDS=$(aws ec2 describe-route-tables --route-table-ids $PRIV_RT_ID --query 'RouteTables[0].Associations[?!Main].RouteTableAssociationId' --output text)
 for ASSOC_ID in $PRIV_ASSOC_IDS; do aws ec2 disassociate-route-table --association-id $ASSOC_ID; done
 
 # ルートテーブルの削除
@@ -124,8 +114,11 @@ aws ec2 delete-vpc --vpc-id $VPC_ID
 # =====================================================
 # 8. キーペアおよびローカル鍵ファイルの削除
 # =====================================================
+KEY_NAME="app-prod-key"
+
 # AWS上のキーペア削除
 aws ec2 delete-key-pair --key-name $KEY_NAME
 
 # ローカルのpemファイル削除
+cd /mnt/c/aws_infra
 rm -f "${KEY_NAME}.pem"
